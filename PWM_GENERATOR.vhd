@@ -1,7 +1,7 @@
 
 library ieee;
 use ieee.std_logic_1164.all;
-
+use work.UART_MESSAGES.all;
 entity pwm_generator is
     port (
         CLOCK_50 : in  std_logic;
@@ -9,12 +9,15 @@ entity pwm_generator is
         LEDG0    : out std_logic;
         PWM_GPIO : out std_logic;
 		  HEX0	  : out std_logic_vector(6 downto 0);
-		  HEX1	  : out std_logic_vector(6 downto 0)
+		  HEX1	  : out std_logic_vector(6 downto 0);
+		  
+		  -- UART
+		  UART_TX  : out std_logic
     );
 end entity pwm_generator;
 
 architecture rtl of pwm_generator is
-
+	signal CLK_1MHZ : std_logic;
     -- 50 MHz / 10 kHz = 5000 clock cycles
     signal counter : integer range 0 to 4999 := 0;
 
@@ -22,8 +25,46 @@ architecture rtl of pwm_generator is
     signal duty_count : integer range 0 to 5000;
 
     signal pwm : std_logic;
-
+	 
+	 signal PLL_LOCKED	:	std_logic;
+	constant MESSAGE	:	string := "HI, I AM BAO";
 begin
+
+--entity uart_tx is
+--    generic (
+--        CLKS_PER_BIT : positive := 5208
+--    );
+--    port (
+--        clk      : in  std_logic;
+--        tx_start : in  std_logic;
+--        tx_data  : in  std_logic_vector(7 downto 0);
+--        tx       : out std_logic;
+--        tx_busy  : out std_logic
+--    );
+--end entity;
+	UART: entity work.uart_tx
+		port map (
+			clk => CLOCK_50,
+			tx_start => '1',
+			tx_data => HELLO(0),
+			tx => UART_TX,
+			tx_busy => open
+		);
+
+--ENTITY PLL_1MHZ IS
+--	PORT
+--	(
+--		inclk0		: IN STD_LOGIC  := '0';
+--		c0		: OUT STD_LOGIC ;
+--		locked		: OUT STD_LOGIC 
+--	);
+--END PLL_1MHZ;
+	PLL_1MHZ:	entity work.PLL_1MHZ
+		port map (
+			inclk0 => CLOCK_50,
+			c0 => CLK_1MHZ,
+			locked => PLL_LOCKED
+		);
 
     -- Select duty cycle using switches
     with SW select
@@ -46,9 +87,9 @@ begin
 						"1111111" when others;
 
     -- PWM Counter
-    process (CLOCK_50)
+    process (CLK_1MHZ)
 	begin
-		if rising_edge(CLOCK_50) then
+		if rising_edge(CLK_1MHZ) then
 			if counter = 4999 then
 				counter <= 0;
 			else

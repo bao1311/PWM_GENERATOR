@@ -1,0 +1,5 @@
+PLL_Name	PLL_1MHZ:PLL_1MHZ|altpll:altpll_component|PLL_1MHZ_altpll:auto_generated|pll1
+PLLJITTER	35
+PLLSPEmax	84
+PLLSPEmin	-53
+
